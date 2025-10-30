@@ -26,7 +26,7 @@ export default function Navigation() {
         <Link
           to="/"
           aria-label="Ir al inicio"
-          className="fixed top-6 right-6 z-50 transition-transform duration-300 hover:scale-105"
+          className="fixed top-4 right-6 z-50 transition-transform duration-300 hover:scale-105"
         >
           <img
             src="https://res.cloudinary.com/ds2scyclq/image/upload/f_auto,q_auto,w_350/v1761594171/logocafe_bzmpor.webp"

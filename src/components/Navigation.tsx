@@ -1,4 +1,4 @@
-import { Info, Leaf, Users as Users2, ShoppingBag, Award, Mail, Home } from "lucide-react";
+import { Info, Leaf, Users as Users2, ShoppingBag, Mail, Home } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export default function Navigation() {
@@ -16,11 +16,6 @@ const navItems = [
       label: "Sosten.",
     },
     { path: "/compra", icon: <ShoppingBag className="w-5 h-5" />, label: "Compra" },
-    {
-      path: "/certificaciones",
-      icon: <Award className="w-5 h-5" />,
-      label: "Cert.",
-    },
     { path: "/contacto", icon: <Mail className="w-5 h-5" />, label: "Contacto" },
   ];
 

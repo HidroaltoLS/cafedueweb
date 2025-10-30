@@ -5,7 +5,6 @@ import Proceso from "./pages/Proceso";
 import Socios from "./pages/Socios";
 import Sostenibilidad from "./pages/Sostenibilidad";
 import Compra from "./pages/Compra";
-import Certificaciones from "./pages/Certificaciones";
 import Contacto from "./pages/Contacto";
 import Navigation from "./components/Navigation";
 import SocialWidget from "./components/SocialWidget";
@@ -32,7 +31,6 @@ export default function App() {
         <Route path="/socios" element={<Socios />} />
         <Route path="/sostenibilidad" element={<Sostenibilidad />} />
         <Route path="/compra" element={<Compra />} />
-        <Route path="/certificaciones" element={<Certificaciones />} />
         <Route path="/contacto" element={<Contacto />} />
       </Routes>
 

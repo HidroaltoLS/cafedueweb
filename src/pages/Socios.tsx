@@ -1,5 +1,5 @@
 import { MapPin, Coffee, Users, Phone, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type RefObject } from "react";
 import Navigation from "../components/Navigation";
 import Footer from "../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -43,9 +43,8 @@ export default function Socios() {
   const [error, setError] = useState<string | null>(null);
   const [selectedSocio, setSelectedSocio] = useState<SocioProfile | null>(null);
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
+  const directoryScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSocios();
@@ -80,17 +79,17 @@ export default function Socios() {
     setIsLoading(false);
   };
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 320;
-      const newScrollLeft =
-        scrollContainerRef.current.scrollLeft +
-        (direction === "left" ? -scrollAmount : scrollAmount);
-      scrollContainerRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: "smooth",
-      });
-    }
+  const scroll = (ref: RefObject<HTMLDivElement>, direction: "left" | "right") => {
+    if (!ref.current) return;
+
+    const scrollAmount = 320;
+    const newScrollLeft =
+      ref.current.scrollLeft + (direction === "left" ? -scrollAmount : scrollAmount);
+
+    ref.current.scrollTo({
+      left: newScrollLeft,
+      behavior: "smooth",
+    });
   };
 
   const handleWhatsAppClick = () => {
@@ -136,14 +135,14 @@ export default function Socios() {
             <h2 className="text-2xl font-serif font-bold mb-6 text-brand-800 text-center">Perfiles destacados</h2>
             <div className="relative">
               <button
-                onClick={() => scroll("left")}
+                onClick={() => scroll(featuredScrollRef, "left")}
                 className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-neutral-100 transition"
               >
                 <ChevronLeft className="w-6 h-6 text-brand-700" />
               </button>
 
               <div
-                ref={scrollContainerRef}
+                ref={featuredScrollRef}
                 className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-4"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
@@ -194,7 +193,7 @@ export default function Socios() {
               </div>
 
               <button
-                onClick={() => scroll("right")}
+                onClick={() => scroll(featuredScrollRef, "right")}
                 className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-neutral-100 transition"
               >
                 <ChevronRight className="w-6 h-6 text-brand-700" />
@@ -204,82 +203,109 @@ export default function Socios() {
         )}
 
         <div className="bg-white rounded-lg shadow-md">
-          <div className="px-6 py-4 border-b">
-            <h2 className="text-2xl font-serif font-bold text-brand-800">Directorio de socios</h2>
-            <p className="text-sm text-neutral-600 font-sans">
-              Consulta la información general de todos los integrantes de la asociación.
-            </p>
+          <div className="px-6 py-4 border-b flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-brand-800">Directorio de socios</h2>
+              <p className="text-sm text-neutral-600 font-sans">
+                Desliza para conocer a los 21 socios que forman parte de Café Dúe.
+              </p>
+            </div>
+            <div className="hidden md:flex gap-3">
+              <button
+                onClick={() => scroll(directoryScrollRef, "left")}
+                className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-brand-700 hover:bg-neutral-200 transition"
+                aria-label="Socios anteriores"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scroll(directoryScrollRef, "right")}
+                className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-brand-700 hover:bg-neutral-200 transition"
+                aria-label="Socios siguientes"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="py-12 text-center text-neutral-500 font-sans">Cargando información…</div>
-            ) : error ? (
-              <div className="py-12 text-center text-red-600 font-semibold font-sans">{error}</div>
-            ) : socios.length === 0 ? (
-              <div className="py-12 text-center text-neutral-500 font-sans">No hay socios registrados actualmente.</div>
-            ) : (
-              <table className="min-w-full divide-y divide-neutral-200">
-                <thead className="bg-neutral-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Socio
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Finca
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Ubicación
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Extensión
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Especialidad
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Producción
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Contacto
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-neutral-200">
-                  {socios.map((socio) => (
-                    <tr key={socio.id} className="hover:bg-neutral-50 transition">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-neutral-900 font-serif">{socio.name}</div>
-                        <div className="text-xs text-neutral-500 font-sans">
-                          {socio.coffee_varieties?.length
-                            ? socio.coffee_varieties.join(", ")
-                            : "Variedades no registradas"}
+          {isLoading ? (
+            <div className="py-12 text-center text-neutral-500 font-sans">Cargando información…</div>
+          ) : error ? (
+            <div className="py-12 text-center text-red-600 font-semibold font-sans">{error}</div>
+          ) : socios.length === 0 ? (
+            <div className="py-12 text-center text-neutral-500 font-sans">No hay socios registrados actualmente.</div>
+          ) : (
+            <div className="relative">
+              <div
+                ref={directoryScrollRef}
+                className="flex gap-6 overflow-x-auto px-6 py-8 scrollbar-hide"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {socios.map((socio) => (
+                  <div key={socio.id} className="flex-shrink-0 w-72">
+                    <Card
+                      className="h-full hover:shadow-lg transition cursor-pointer"
+                      onClick={() => setSelectedSocio(socio)}
+                    >
+                      <CardHeader className="text-center">
+                        <div className="w-20 h-20 bg-brand-100 rounded-full flex items-center justify-center text-3xl font-bold text-brand-800 mx-auto mb-4">
+                          {socio.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
-                        {socio.farm_name || "No especificada"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
-                        {socio.location || "Sin ubicación"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
-                        {socio.hectares ? `${socio.hectares} ha` : "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
-                        {socio.specialty || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
-                        {socio.production_volume || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-brand-700 font-semibold font-sans">
-                        {socio.contact_phone || "No disponible"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                        <CardTitle className="font-serif text-xl">{socio.name}</CardTitle>
+                        <p className="text-brand-700 font-medium font-sans">{socio.farm_name || "Finca no registrada"}</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 mb-4 text-sm text-neutral-700 font-sans">
+                          <div className="flex items-center justify-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>{socio.location || "Sin ubicación"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Extensión:</span>
+                            <span className="font-medium">{socio.hectares ? `${socio.hectares} ha` : "-"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Especialidad:</span>
+                            <span className="font-medium">{socio.specialty || "-"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Producción:</span>
+                            <span className="font-medium">{socio.production_volume || "-"}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-brand-600 font-semibold text-center">Haz clic para conocer más</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-white to-transparent hidden md:block" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-white to-transparent hidden md:block" />
+
+              <div className="md:hidden flex justify-center gap-4 pb-6">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => scroll(directoryScrollRef, "left")}
+                  className="rounded-full"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => scroll(directoryScrollRef, "right")}
+                  className="rounded-full"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <Card className="mt-12">

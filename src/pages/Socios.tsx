@@ -34,11 +34,13 @@ interface SocioProfile {
   certifications: string[];
   contact_phone: string;
   display_order: number;
-  is_featured: boolean;
+  is_featured?: boolean | null;
 }
 
 export default function Socios() {
   const [socios, setSocios] = useState<SocioProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedSocio, setSelectedSocio] = useState<SocioProfile | null>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -68,20 +70,14 @@ export default function Socios() {
 
     if (error) {
       console.error("Error fetching socios:", error);
-      setErrorMessage("No pudimos cargar la información de los socios en este momento.");
-      setLoading(false);
+      setError("No se pudo cargar la información de los socios.");
+      setIsLoading(false);
       return;
     }
 
-    if (data) {
-      setSocios(data as SocioProfile[]);
-    } else {
-      setSocios([]);
-    }
-
-    setErrorMessage(null);
-
-    setLoading(false);
+    setSocios((data ?? []) as SocioProfile[]);
+    setError(null);
+    setIsLoading(false);
   };
 
   const scroll = (direction: "left" | "right") => {
@@ -101,7 +97,7 @@ export default function Socios() {
     window.open("https://wa.me/593981369582", "_blank");
   };
 
-  const featuredSocios = socios.filter((socio) => socio.is_featured);
+  const featuredSocios = socios.filter((socio) => Boolean(socio.is_featured));
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-24">
@@ -135,142 +131,148 @@ export default function Socios() {
           </div>
         </div>
 
-        <div className="mb-12">
-          <h2 className="text-2xl font-serif font-bold mb-6 text-brand-800 text-center">Perfiles destacados</h2>
-          <div className="relative">
-            {featuredSocios.length > 0 ? (
-              <>
-                <button
-                  onClick={() => scroll("left")}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-neutral-100 transition"
-                  aria-label="Ver perfiles anteriores"
-                >
-                  <ChevronLeft className="w-6 h-6 text-brand-700" />
-                </button>
+        {featuredSocios.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-serif font-bold mb-6 text-brand-800 text-center">Perfiles destacados</h2>
+            <div className="relative">
+              <button
+                onClick={() => scroll("left")}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-neutral-100 transition"
+              >
+                <ChevronLeft className="w-6 h-6 text-brand-700" />
+              </button>
 
-                <div
-                  ref={scrollContainerRef}
-                  className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-4"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                >
-                  {featuredSocios.map((socio) => (
-                    <div
-                      key={socio.id}
-                      className="flex-shrink-0 w-80"
+              <div
+                ref={scrollContainerRef}
+                className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-4"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {featuredSocios.map((socio) => (
+                  <div
+                    key={socio.id}
+                    className="flex-shrink-0 w-80"
+                  >
+                    <Card
+                      className="hover:shadow-lg transition cursor-pointer h-full"
+                      onClick={() => setSelectedSocio(socio)}
                     >
-                      <Card
-                        className="hover:shadow-lg transition cursor-pointer h-full"
-                        onClick={() => setSelectedSocio(socio)}
-                      >
-                        <CardHeader>
-                          <div className="w-20 h-20 bg-brand-100 rounded-full flex items-center justify-center text-3xl font-bold text-brand-800 mb-4 mx-auto">
-                            {socio.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
+                      <CardHeader>
+                        <div className="w-20 h-20 bg-brand-100 rounded-full flex items-center justify-center text-3xl font-bold text-brand-800 mb-4 mx-auto">
+                          {socio.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </div>
+                        <CardTitle className="text-center font-serif">{socio.name}</CardTitle>
+                        <p className="text-center text-brand-700 font-medium font-sans">{socio.farm_name}</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center text-sm text-neutral-700 font-sans justify-center">
+                            <MapPin className="w-4 h-4 mr-2" />
+                            {socio.location}
                           </div>
-                          <CardTitle className="text-center font-serif">{socio.name}</CardTitle>
-                          <p className="text-center text-brand-700 font-medium font-sans">{socio.farm_name}</p>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center text-sm text-neutral-700 font-sans justify-center">
-                              <MapPin className="w-4 h-4 mr-2" />
-                              {socio.location}
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-neutral-700 font-sans">Extensión:</span>
-                              <span className="font-medium">
-                                {typeof socio.hectares === "number" ? `${socio.hectares} ha` : "—"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-neutral-700 font-sans">Cargas Familiares:</span>
-                              <span className="font-medium">{socio.production_volume}</span>
-                            </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-neutral-700 font-sans">Extensión:</span>
+                            <span className="font-medium">{socio.hectares} ha</span>
                           </div>
-                          <p className="text-sm text-neutral-700 font-sans leading-relaxed line-clamp-3">
-                            {socio.story}
-                          </p>
-                          <p className="text-xs text-brand-600 font-medium mt-3 text-center">
-                            Click para ver más
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-neutral-700 font-sans">Cargas Familiares:</span>
+                            <span className="font-medium">{socio.production_volume}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-neutral-700 font-sans leading-relaxed line-clamp-3">
+                          {socio.story}
+                        </p>
+                        <p className="text-xs text-brand-600 font-medium mt-3 text-center">
+                          Click para ver más
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
 
-                <button
-                  onClick={() => scroll("right")}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-neutral-100 transition"
-                  aria-label="Ver perfiles siguientes"
-                >
-                  <ChevronRight className="w-6 h-6 text-brand-700" />
-                </button>
-              </>
-            ) : (
-              <p className="text-center text-neutral-600 font-sans px-6 py-10 bg-white rounded-lg shadow-inner">
-                Pronto compartiremos los perfiles destacados de nuestros socios.
-              </p>
-            )}
+              <button
+                onClick={() => scroll("right")}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-neutral-100 transition"
+              >
+                <ChevronRight className="w-6 h-6 text-brand-700" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white rounded-lg shadow-md p-8 mb-12">
-          <h3 className="text-2xl font-serif font-bold text-brand-800 mb-2 text-left">
-            Directorio completo de socios
-          </h3>
-          <p className="text-neutral-600 font-sans mb-6 text-left">
-            Consulta la lista de productores que forman parte de Café Dúe.
-          </p>
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="px-6 py-4 border-b">
+            <h2 className="text-2xl font-serif font-bold text-brand-800">Directorio de socios</h2>
+            <p className="text-sm text-neutral-600 font-sans">
+              Consulta la información general de todos los integrantes de la asociación.
+            </p>
+          </div>
+
           <div className="overflow-x-auto">
-            {loading ? (
-              <p className="text-sm text-neutral-600 font-sans">Cargando información...</p>
-            ) : errorMessage ? (
-              <p className="text-sm text-neutral-600 font-sans">{errorMessage}</p>
+            {isLoading ? (
+              <div className="py-12 text-center text-neutral-500 font-sans">Cargando información…</div>
+            ) : error ? (
+              <div className="py-12 text-center text-red-600 font-semibold font-sans">{error}</div>
             ) : socios.length === 0 ? (
-              <p className="text-sm text-neutral-600 font-sans">
-                No hay socios registrados en este momento.
-              </p>
+              <div className="py-12 text-center text-neutral-500 font-sans">No hay socios registrados actualmente.</div>
             ) : (
               <table className="min-w-full divide-y divide-neutral-200">
                 <thead className="bg-neutral-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                       Socio
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                       Finca
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                       Ubicación
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                      Extensión
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
                       Especialidad
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
-                      Extensión
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                      Producción
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+                      Contacto
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
                   {socios.map((socio) => (
-                    <tr key={socio.id} className="hover:bg-neutral-50">
-                      <td className="px-4 py-3 text-sm font-medium text-brand-800 font-serif">
-                        {socio.name}
+                    <tr key={socio.id} className="hover:bg-neutral-50 transition">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-neutral-900 font-serif">{socio.name}</div>
+                        <div className="text-xs text-neutral-500 font-sans">
+                          {socio.coffee_varieties?.length
+                            ? socio.coffee_varieties.join(", ")
+                            : "Variedades no registradas"}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-neutral-700 font-sans">
-                        {socio.farm_name}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
+                        {socio.farm_name || "No especificada"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-neutral-700 font-sans">
-                        {socio.location}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
+                        {socio.location || "Sin ubicación"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-neutral-700 font-sans">
-                        {socio.specialty}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
+                        {socio.hectares ? `${socio.hectares} ha` : "-"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-neutral-700 font-sans">
-                        {typeof socio.hectares === "number" ? `${socio.hectares} ha` : "—"}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
+                        {socio.specialty || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-sans">
+                        {socio.production_volume || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-brand-700 font-semibold font-sans">
+                        {socio.contact_phone || "No disponible"}
                       </td>
                     </tr>
                   ))}

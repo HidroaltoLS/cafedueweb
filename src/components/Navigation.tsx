@@ -5,7 +5,7 @@ export default function Navigation() {
   const location = useLocation();
   const isHome = location.pathname === "/";
 
-const navItems = [
+  const navItems = [
     { path: "/", icon: <Home className="w-5 h-5" />, label: "Inicio" },
     { path: "/about", icon: <Info className="w-5 h-5" />, label: "Nosotros" },
     { path: "/proceso", icon: <Leaf className="w-5 h-5" />, label: "Proceso" },
@@ -40,7 +40,7 @@ const navItems = [
       {/* ✅ NAV INFERIOR ORIGINAL */}
       <div className="fixed bottom-0 left-0 right-0 z-40">
         <nav className="mx-auto max-w-5xl mb-6 px-3">
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-2 bg-neutral-50/95 backdrop-blur rounded-2xl p-2 shadow-xl">
+          <div className="grid grid-cols-4 md:grid-cols-7 gap-2 justify-items-center bg-neutral-50/95 backdrop-blur rounded-2xl p-2 shadow-xl">
             {navItems.map((item) => (
               <Link
                 key={item.path}

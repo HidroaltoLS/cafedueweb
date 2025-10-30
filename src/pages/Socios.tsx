@@ -6,12 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import SocioDetailModal from "../components/SocioDetailModal";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase: SupabaseClient | null =
+  typeof supabaseUrl === "string" &&
+  supabaseUrl.length > 0 &&
+  typeof supabaseAnonKey === "string" &&
+  supabaseAnonKey.length > 0
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
 interface SocioProfile {
   id: string;
@@ -19,8 +25,8 @@ interface SocioProfile {
   profile_image: string;
   farm_name: string;
   location: string;
-  hectares: number;
-  years_experience: number;
+  hectares: number | null;
+  years_experience: number | string;
   specialty: string;
   story: string;
   coffee_varieties: string[];
@@ -45,6 +51,17 @@ export default function Socios() {
   }, []);
 
   const fetchSocios = async () => {
+    if (!supabase) {
+      console.warn("Supabase client no configurado. Omite la carga de socios.");
+      setErrorMessage(
+        "La información de nuestros socios se mostrará cuando la configuración de datos esté completa."
+      );
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
     const { data, error } = await supabase
       .from("socios_profiles")
       .select("*")

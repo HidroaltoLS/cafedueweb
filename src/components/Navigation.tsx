@@ -40,12 +40,12 @@ export default function Navigation() {
       {/* ✅ NAV INFERIOR ORIGINAL */}
       <div className="fixed bottom-0 left-0 right-0 z-40">
         <nav className="mx-auto max-w-5xl mb-6 px-3">
-          <div className="grid grid-cols-4 md:grid-cols-7 gap-2 items-stretch justify-items-stretch bg-neutral-50/95 backdrop-blur rounded-2xl p-2 shadow-xl">
+          <div className="grid grid-cols-4 md:grid-cols-7 gap-2 items-stretch justify-items-stretch justify-center bg-neutral-50/95 backdrop-blur rounded-2xl p-2 shadow-xl">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2 px-3 md:px-4 w-full transition font-sans shadow-sm ${
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl py-2 px-4 w-full transition font-sans shadow-sm ${
                   location.pathname === item.path
                     ? "bg-brand-800 text-white shadow-lg"
                     : "text-brand-700 hover:bg-neutral-200 hover:shadow-lg"

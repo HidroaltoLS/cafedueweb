@@ -45,10 +45,10 @@ export default function Navigation() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2 transition font-sans ${
+                className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2 transition font-sans shadow-sm ${
                   location.pathname === item.path
-                    ? "bg-brand-800 text-white"
-                    : "hover:bg-neutral-200 text-brand-700"
+                    ? "bg-brand-800 text-white shadow-lg"
+                    : "text-brand-700 hover:bg-neutral-200 hover:shadow-lg"
                 }`}
               >
                 <span>{item.icon}</span>

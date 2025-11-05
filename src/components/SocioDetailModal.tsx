@@ -7,14 +7,16 @@ interface SocioProfile {
   profile_image: string;
   farm_name: string;
   location: string;
-  hectares: number;
-  years_experience: string;
+  hectares: number | null;
+  years_experience: number | string;
   specialty: string;
   story: string;
   coffee_varieties: string[];
   production_volume: string;
   certifications: string[];
   contact_phone: string;
+  display_order: number;
+  is_featured?: boolean | null;
 }
 
 interface SocioDetailModalProps {

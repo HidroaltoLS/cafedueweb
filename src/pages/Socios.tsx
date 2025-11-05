@@ -6,12 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import SocioDetailModal from "../components/SocioDetailModal";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase: SupabaseClient | null =
+  typeof supabaseUrl === "string" &&
+  supabaseUrl.length > 0 &&
+  typeof supabaseAnonKey === "string" &&
+  supabaseAnonKey.length > 0
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
 interface SocioProfile {
   id: string;
@@ -102,6 +108,8 @@ export default function Socios() {
   const handleWhatsAppClick = () => {
     window.open("https://wa.me/593981369582", "_blank");
   };
+
+  const featuredSocios = socios.filter((socio) => Boolean(socio.is_featured));
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-24">

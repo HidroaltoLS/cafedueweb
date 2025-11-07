@@ -201,7 +201,11 @@ export default function Socios() {
         (a, b) => a.display_order - b.display_order
       );
 
-      setFeaturedSociosList(orderedSocios.filter((socio) => socio.is_featured));
+      const featuredSocios = orderedSocios.filter((socio) => socio.is_featured);
+      const fallbackSocios =
+        featuredSocios.length > 0 ? featuredSocios : orderedSocios.slice(0, 21);
+
+      setFeaturedSociosList(fallbackSocios);
       setFeaturedError(null);
     } catch (fetchError) {
       console.error("Error fetching socios:", fetchError);
@@ -273,7 +277,9 @@ export default function Socios() {
           ) : featuredError ? (
             <div className="py-12 text-center text-red-600 font-semibold font-sans">{featuredError}</div>
           ) : featuredSociosList.length === 0 ? (
-            <div className="py-12 text-center text-neutral-500 font-sans">No hay socios destacados disponibles por el momento.</div>
+            <div className="py-12 text-center text-neutral-500 font-sans">
+              No hay socios destacados disponibles por el momento.
+            </div>
           ) : (
             <div className="relative">
               <button

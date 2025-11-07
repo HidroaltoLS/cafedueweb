@@ -11,6 +11,9 @@ const fallbackSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
 const fallbackSupabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
 
+const SCROLL_STEP = 320;
+const AUTO_SCROLL_INTERVAL_MS = 5000;
+
 const resolveEnvVar = (keys: string[]) => {
   const env = import.meta.env as Record<string, string | undefined>;
 
@@ -68,6 +71,7 @@ export default function Socios() {
   const [email, setEmail] = useState("");
   const featuredScrollRef = useRef<HTMLDivElement>(null);
   const directoryScrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const normalizeTextArray = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -226,12 +230,57 @@ export default function Socios() {
     }
   };
 
+  useEffect(() => {
+    const clearExistingInterval = () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+    };
+
+    clearExistingInterval();
+
+    if (!featuredScrollRef.current || featuredSociosList.length <= 1) {
+      return () => {
+        clearExistingInterval();
+      };
+    }
+
+    const intervalId = window.setInterval(() => {
+      const container = featuredScrollRef.current;
+
+      if (!container) {
+        return;
+      }
+
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+      if (maxScrollLeft <= 0) {
+        return;
+      }
+
+      const nextScrollLeft = container.scrollLeft + SCROLL_STEP;
+
+      if (nextScrollLeft >= maxScrollLeft) {
+        container.scrollTo({ left: 0, behavior: "auto" });
+      } else {
+        container.scrollTo({ left: nextScrollLeft, behavior: "smooth" });
+      }
+    }, AUTO_SCROLL_INTERVAL_MS);
+
+    autoScrollIntervalRef.current = intervalId;
+
+    return () => {
+      clearInterval(intervalId);
+      autoScrollIntervalRef.current = null;
+    };
+  }, [featuredSociosList]);
+
   const scroll = (ref: RefObject<HTMLDivElement>, direction: "left" | "right") => {
     if (!ref.current) return;
 
-    const scrollAmount = 320;
     const newScrollLeft =
-      ref.current.scrollLeft + (direction === "left" ? -scrollAmount : scrollAmount);
+      ref.current.scrollLeft + (direction === "left" ? -SCROLL_STEP : SCROLL_STEP);
 
     ref.current.scrollTo({
       left: newScrollLeft,

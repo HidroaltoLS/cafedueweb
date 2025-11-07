@@ -7,7 +7,7 @@ interface SocioProfile {
   profile_image: string;
   farm_name: string;
   location: string;
-  hectares: number;
+  hectares: number | null;
   years_experience: string;
   specialty: string;
   story: string;
@@ -23,6 +23,13 @@ interface SocioDetailModalProps {
 }
 
 export default function SocioDetailModal({ socio, onClose }: SocioDetailModalProps) {
+  const hectaresLabel =
+    socio.hectares !== null && !Number.isNaN(socio.hectares)
+      ? `${socio.hectares} hectáreas`
+      : "Información no disponible";
+  const harvestLabel = socio.years_experience || "Información no disponible";
+  const productionVolumeLabel = socio.production_volume || "Información no disponible";
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -73,7 +80,7 @@ export default function SocioDetailModal({ socio, onClose }: SocioDetailModalPro
                   <TrendingUp className="w-5 h-5 text-eco-600" />
                   <span className="text-sm font-semibold">Extensión</span>
                 </div>
-                <p className="text-sm text-neutral-700 font-sans">{socio.hectares} hectáreas</p>
+                <p className="text-sm text-neutral-700 font-sans">{hectaresLabel}</p>
               </CardContent>
             </Card>
 
@@ -83,7 +90,7 @@ export default function SocioDetailModal({ socio, onClose }: SocioDetailModalPro
                   <Calendar className="w-5 h-5 text-eco-600" />
                   <span className="text-sm font-semibold">Meses de cosecha</span>
                 </div>
-                <p className="text-sm text-neutral-700 font-sans">{socio.years_experience}</p>
+                <p className="text-sm text-neutral-700 font-sans">{harvestLabel}</p>
               </CardContent>
             </Card>
 
@@ -93,7 +100,7 @@ export default function SocioDetailModal({ socio, onClose }: SocioDetailModalPro
                   <Users className="w-5 h-5 text-eco-600" />
                   <span className="text-sm font-semibold">Cargas Familiares</span>
                 </div>
-                <p className="text-sm text-neutral-700 font-sans">{socio.production_volume}</p>
+                <p className="text-sm text-neutral-700 font-sans">{productionVolumeLabel}</p>
               </CardContent>
             </Card>
           </div>

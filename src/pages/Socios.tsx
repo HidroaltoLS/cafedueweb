@@ -11,14 +11,31 @@ const fallbackSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
 const fallbackSupabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
 
-const supabaseUrl =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) || fallbackSupabaseUrl;
-const supabaseAnonKey =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || fallbackSupabaseAnonKey;
+const resolveEnvVar = (keys: string[]) => {
+  const env = import.meta.env as Record<string, string | undefined>;
 
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  for (const key of keys) {
+    const value = env[key];
+    if (value && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const supabaseUrl =
+  resolveEnvVar(["VITE_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"]) || fallbackSupabaseUrl;
+const supabaseAnonKey =
+  resolveEnvVar(["VITE_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]) ||
+  fallbackSupabaseAnonKey;
+
+if (
+  !resolveEnvVar(["VITE_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"]) ||
+  !resolveEnvVar(["VITE_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"])
+) {
   console.warn(
-    "Usando las credenciales predeterminadas de Supabase proporcionadas para el entorno de desarrollo. Configura las variables VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para sobreescribirlas."
+    "Usando las credenciales predeterminadas de Supabase proporcionadas para el entorno de desarrollo. Configura las variables VITE_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL y VITE_SUPABASE_ANON_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY para sobreescribirlas."
   );
 }
 
@@ -169,6 +186,7 @@ export default function Socios() {
         headers: {
           apikey: supabaseAnonKey,
           Authorization: `Bearer ${supabaseAnonKey}`,
+          Accept: "application/json",
         },
         cache: "no-store",
       });

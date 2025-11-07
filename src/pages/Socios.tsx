@@ -11,6 +11,9 @@ const fallbackSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
 const fallbackSupabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
 
+const SCROLL_STEP = 320;
+const AUTO_SCROLL_INTERVAL_MS = 5000;
+
 const resolveEnvVar = (keys: string[]) => {
   const env = import.meta.env as Record<string, string | undefined>;
 
@@ -58,12 +61,17 @@ interface SocioProfile {
 }
 
 export default function Socios() {
+  const [socios, setSocios] = useState<SocioProfile[]>([]);
   const [featuredSociosList, setFeaturedSociosList] = useState<SocioProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [featuredError, setFeaturedError] = useState<string | null>(null);
   const [selectedSocio, setSelectedSocio] = useState<SocioProfile | null>(null);
   const [email, setEmail] = useState("");
   const featuredScrollRef = useRef<HTMLDivElement>(null);
+  const directoryScrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const normalizeTextArray = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -171,6 +179,7 @@ export default function Socios() {
   }, []);
 
   const fetchSocios = async () => {
+    setIsLoading(true);
     setIsLoadingFeatured(true);
     try {
       const requestUrl = new URL(`${supabaseUrl}/rest/v1/socios_profiles`);
@@ -201,29 +210,79 @@ export default function Socios() {
         (a, b) => a.display_order - b.display_order
       );
 
-      const featuredSocios = orderedSocios.filter((socio) => socio.is_featured);
-      const fallbackSocios =
-        featuredSocios.length > 0 ? featuredSocios : orderedSocios.slice(0, 21);
+      const highlightedSocios = orderedSocios.filter((socio) => socio.is_featured);
+      const fallbackFeatured =
+        highlightedSocios.length > 0 ? highlightedSocios : orderedSocios.slice(0, 21);
 
-      setFeaturedSociosList(fallbackSocios);
+      setSocios(orderedSocios);
+      setFeaturedSociosList(fallbackFeatured);
+      setError(null);
       setFeaturedError(null);
     } catch (fetchError) {
       console.error("Error fetching socios:", fetchError);
+      setSocios([]);
       setFeaturedSociosList([]);
+      setError("No se pudo cargar la información de los socios.");
       setFeaturedError("No se pudo cargar la información de los socios destacados.");
     } finally {
+      setIsLoading(false);
       setIsLoadingFeatured(false);
     }
 
     setIsLoading(false);
   };
 
+  useEffect(() => {
+    const clearExistingInterval = () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+    };
+
+    clearExistingInterval();
+
+    if (!featuredScrollRef.current || featuredSociosList.length <= 1) {
+      return () => {
+        clearExistingInterval();
+      };
+    }
+
+    const intervalId = window.setInterval(() => {
+      const container = featuredScrollRef.current;
+
+      if (!container) {
+        return;
+      }
+
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+      if (maxScrollLeft <= 0) {
+        return;
+      }
+
+      const nextScrollLeft = container.scrollLeft + SCROLL_STEP;
+
+      if (nextScrollLeft >= maxScrollLeft) {
+        container.scrollTo({ left: 0, behavior: "auto" });
+      } else {
+        container.scrollTo({ left: nextScrollLeft, behavior: "smooth" });
+      }
+    }, AUTO_SCROLL_INTERVAL_MS);
+
+    autoScrollIntervalRef.current = intervalId;
+
+    return () => {
+      clearInterval(intervalId);
+      autoScrollIntervalRef.current = null;
+    };
+  }, [featuredSociosList]);
+
   const scroll = (ref: RefObject<HTMLDivElement>, direction: "left" | "right") => {
     if (!ref.current) return;
 
-    const scrollAmount = 320;
     const newScrollLeft =
-      ref.current.scrollLeft + (direction === "left" ? -scrollAmount : scrollAmount);
+      ref.current.scrollLeft + (direction === "left" ? -SCROLL_STEP : SCROLL_STEP);
 
     ref.current.scrollTo({
       left: newScrollLeft,
@@ -353,6 +412,112 @@ export default function Socios() {
               >
                 <ChevronRight className="w-6 h-6 text-brand-700" />
               </button>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="px-6 py-4 border-b flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-brand-800">Directorio de socios</h2>
+              <p className="text-sm text-neutral-600 font-sans">
+                Desliza para conocer a los 21 socios que forman parte de Café Dúe.
+              </p>
+            </div>
+            <div className="hidden md:flex gap-3">
+              <button
+                onClick={() => scroll(directoryScrollRef, "left")}
+                className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-brand-700 hover:bg-neutral-200 transition"
+                aria-label="Socios anteriores"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scroll(directoryScrollRef, "right")}
+                className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-brand-700 hover:bg-neutral-200 transition"
+                aria-label="Socios siguientes"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="py-12 text-center text-neutral-500 font-sans">Cargando información…</div>
+          ) : error ? (
+            <div className="py-12 text-center text-red-600 font-semibold font-sans">{error}</div>
+          ) : socios.length === 0 ? (
+            <div className="py-12 text-center text-neutral-500 font-sans">No hay socios registrados actualmente.</div>
+          ) : (
+            <div className="relative">
+              <div
+                ref={directoryScrollRef}
+                className="flex gap-6 overflow-x-auto px-6 py-8 scrollbar-hide"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {socios.map((socio) => (
+                  <div key={socio.id} className="flex-shrink-0 w-72">
+                    <Card
+                      className="h-full hover:shadow-lg transition cursor-pointer"
+                      onClick={() => setSelectedSocio(socio)}
+                    >
+                      <CardHeader className="text-center">
+                        <div className="w-20 h-20 bg-brand-100 rounded-full flex items-center justify-center text-3xl font-bold text-brand-800 mx-auto mb-4">
+                          {socio.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </div>
+                        <CardTitle className="font-serif text-xl">{socio.name}</CardTitle>
+                        <p className="text-brand-700 font-medium font-sans">{socio.farm_name || "Finca no registrada"}</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 mb-4 text-sm text-neutral-700 font-sans">
+                          <div className="flex items-center justify-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>{socio.location || "Sin ubicación"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Extensión:</span>
+                            <span className="font-medium">{socio.hectares ? `${socio.hectares} ha` : "-"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Especialidad:</span>
+                            <span className="font-medium">{socio.specialty || "-"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Producción:</span>
+                            <span className="font-medium">{socio.production_volume || "-"}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-brand-600 font-semibold text-center">Haz clic para conocer más</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-white to-transparent hidden md:block" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-white to-transparent hidden md:block" />
+
+              <div className="md:hidden flex justify-center gap-4 pb-6">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => scroll(directoryScrollRef, "left")}
+                  className="rounded-full"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => scroll(directoryScrollRef, "right")}
+                  className="rounded-full"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>

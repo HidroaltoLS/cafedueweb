@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import SocioDetailModal from "../components/SocioDetailModal";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const fallbackSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
 const fallbackSupabaseAnonKey =
@@ -149,6 +149,8 @@ export default function Socios() {
       setIsLoading(false);
       setIsLoadingFeatured(false);
     }
+
+    setIsLoading(false);
   };
 
   const scroll = (ref: RefObject<HTMLDivElement>, direction: "left" | "right") => {
@@ -167,6 +169,8 @@ export default function Socios() {
   const handleWhatsAppClick = () => {
     window.open("https://wa.me/593981369582", "_blank");
   };
+
+  const featuredSocios = socios.filter((socio) => Boolean(socio.is_featured));
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-24">

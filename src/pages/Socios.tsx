@@ -228,6 +228,8 @@ export default function Socios() {
       setIsLoading(false);
       setIsLoadingFeatured(false);
     }
+
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -291,6 +293,8 @@ export default function Socios() {
   const handleWhatsAppClick = () => {
     window.open("https://wa.me/593981369582", "_blank");
   };
+
+  const featuredSocios = socios.filter((socio) => Boolean(socio.is_featured));
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-24">

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import SocioDetailModal from "../components/SocioDetailModal";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const fallbackSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
 const fallbackSupabaseAnonKey =
@@ -22,8 +21,6 @@ if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KE
     "Usando las credenciales predeterminadas de Supabase proporcionadas para el entorno de desarrollo. Configura las variables VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para sobreescribirlas."
   );
 }
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface SocioProfile {
   id: string;
@@ -78,16 +75,61 @@ export default function Socios() {
     return [];
   };
 
+  const normalizeBoolean = (value: unknown) => {
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "number") {
+      return value === 1;
+    }
+
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+
+      if (!normalized) return false;
+
+      if (["true", "t", "1", "yes", "y", "si", "sí"].includes(normalized)) {
+        return true;
+      }
+
+      if (["false", "f", "0", "no", "n"].includes(normalized)) {
+        return false;
+      }
+    }
+
+    return false;
+  };
+
+  const parseNullableNumber = (value: unknown): number | null => {
+    if (value === null || value === undefined || value === "") {
+      return null;
+    }
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : null;
+    }
+
+    if (typeof value === "string") {
+      const match = value.trim().match(/-?\d+[\.,]?\d*/);
+
+      if (!match) return null;
+
+      const normalized = match[0].replace(",", ".");
+      const parsed = Number.parseFloat(normalized);
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+
+    return null;
+  };
+
   const normalizeSocio = (record: Record<string, unknown>): SocioProfile => ({
     id: String(record.id ?? ""),
     name: String(record.name ?? ""),
     profile_image: typeof record.profile_image === "string" ? record.profile_image : "",
     farm_name: String(record.farm_name ?? ""),
     location: String(record.location ?? ""),
-    hectares:
-      record.hectares === null || record.hectares === undefined || record.hectares === ""
-        ? null
-        : Number(record.hectares),
+    hectares: parseNullableNumber(record.hectares),
     years_experience:
       record.years_experience === null || record.years_experience === undefined
         ? ""
@@ -107,11 +149,8 @@ export default function Socios() {
     display_order:
       typeof record.display_order === "number"
         ? record.display_order
-        : Number(record.display_order ?? 0),
-    is_featured:
-      typeof record.is_featured === "boolean"
-        ? record.is_featured
-        : String(record.is_featured ?? "").toLowerCase() === "true",
+        : Number.parseInt(String(record.display_order ?? "0"), 10) || 0,
+    is_featured: normalizeBoolean(record.is_featured),
   });
 
   useEffect(() => {
@@ -122,21 +161,35 @@ export default function Socios() {
     setIsLoading(true);
     setIsLoadingFeatured(true);
     try {
-      const { data, error } = await supabase
-        .from("socios_profiles")
-        .select("*")
-        .order("display_order", { ascending: true });
+      const requestUrl = new URL(`${supabaseUrl}/rest/v1/socios_profiles`);
+      requestUrl.searchParams.set("select", "*");
+      requestUrl.searchParams.set("order", "display_order");
 
-      if (error) {
-        throw error;
+      const response = await fetch(requestUrl.toString(), {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || response.statusText);
       }
 
-      const normalizedSocios = (data ?? []).map((record) =>
+      const rawData = (await response.json()) as unknown[];
+
+      const normalizedSocios = (rawData ?? []).map((record) =>
         normalizeSocio(record as Record<string, unknown>)
       );
 
-      setSocios(normalizedSocios);
-      setFeaturedSocios(normalizedSocios.filter((socio) => socio.is_featured));
+      const orderedSocios = [...normalizedSocios].sort(
+        (a, b) => a.display_order - b.display_order
+      );
+
+      setSocios(orderedSocios);
+      setFeaturedSocios(orderedSocios.filter((socio) => socio.is_featured));
       setError(null);
       setFeaturedError(null);
     } catch (fetchError) {

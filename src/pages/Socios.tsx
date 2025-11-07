@@ -59,7 +59,7 @@ interface SocioProfile {
 
 export default function Socios() {
   const [socios, setSocios] = useState<SocioProfile[]>([]);
-  const [featuredSocios, setFeaturedSocios] = useState<SocioProfile[]>([]);
+  const [featuredSociosList, setFeaturedSociosList] = useState<SocioProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -207,13 +207,13 @@ export default function Socios() {
       );
 
       setSocios(orderedSocios);
-      setFeaturedSocios(orderedSocios.filter((socio) => socio.is_featured));
+      setFeaturedSociosList(orderedSocios.filter((socio) => socio.is_featured));
       setError(null);
       setFeaturedError(null);
     } catch (fetchError) {
       console.error("Error fetching socios:", fetchError);
       setSocios([]);
-      setFeaturedSocios([]);
+      setFeaturedSociosList([]);
       setError("No se pudo cargar la información de los socios.");
       setFeaturedError("No se pudo cargar la información de los socios destacados.");
     } finally {
@@ -282,7 +282,7 @@ export default function Socios() {
             <div className="py-12 text-center text-neutral-500 font-sans">Cargando perfiles destacados…</div>
           ) : featuredError ? (
             <div className="py-12 text-center text-red-600 font-semibold font-sans">{featuredError}</div>
-          ) : featuredSocios.length === 0 ? (
+          ) : featuredSociosList.length === 0 ? (
             <div className="py-12 text-center text-neutral-500 font-sans">No hay socios destacados disponibles por el momento.</div>
           ) : (
             <div className="relative">
@@ -298,7 +298,7 @@ export default function Socios() {
                 className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-4"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
-                {featuredSocios.map((socio) => (
+                {featuredSociosList.map((socio) => (
                   <div key={socio.id} className="flex-shrink-0 w-80">
                     <Card
                       className="hover:shadow-lg transition cursor-pointer h-full"

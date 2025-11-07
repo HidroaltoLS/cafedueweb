@@ -8,16 +8,22 @@ import { Button } from "../components/ui/button";
 import SocioDetailModal from "../components/SocioDetailModal";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const fallbackSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
+const fallbackSupabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
 
-const supabase: SupabaseClient | null =
-  typeof supabaseUrl === "string" &&
-  supabaseUrl.length > 0 &&
-  typeof supabaseAnonKey === "string" &&
-  supabaseAnonKey.length > 0
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null;
+const supabaseUrl =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) || fallbackSupabaseUrl;
+const supabaseAnonKey =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || fallbackSupabaseAnonKey;
+
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  console.warn(
+    "Usando las credenciales predeterminadas de Supabase proporcionadas para el entorno de desarrollo. Configura las variables VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para sobreescribirlas."
+  );
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface SocioProfile {
   id: string;
@@ -25,8 +31,8 @@ interface SocioProfile {
   profile_image: string;
   farm_name: string;
   location: string;
-  hectares: number;
-  years_experience: number | string;
+  hectares: number | null;
+  years_experience: string;
   specialty: string;
   story: string;
   coffee_varieties: string[];
@@ -34,7 +40,7 @@ interface SocioProfile {
   certifications: string[];
   contact_phone: string;
   display_order: number;
-  is_featured?: boolean | null;
+  is_featured?: boolean;
 }
 
 export default function Socios() {
@@ -48,6 +54,62 @@ export default function Socios() {
   const [email, setEmail] = useState("");
   const featuredScrollRef = useRef<HTMLDivElement>(null);
   const directoryScrollRef = useRef<HTMLDivElement>(null);
+
+  const normalizeTextArray = (value: unknown) => {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+
+      const cleaned = trimmed
+        .replace(/^[{\[]/, "")
+        .replace(/[}\]]$/, "")
+        .replace(/"/g, "");
+
+      return cleaned
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+    }
+
+    return [];
+  };
+
+  const normalizeSocio = (record: Record<string, unknown>): SocioProfile => ({
+    id: String(record.id ?? ""),
+    name: String(record.name ?? ""),
+    profile_image: typeof record.profile_image === "string" ? record.profile_image : "",
+    farm_name: String(record.farm_name ?? ""),
+    location: String(record.location ?? ""),
+    hectares:
+      record.hectares === null || record.hectares === undefined || record.hectares === ""
+        ? null
+        : Number(record.hectares),
+    years_experience:
+      record.years_experience === null || record.years_experience === undefined
+        ? ""
+        : String(record.years_experience),
+    specialty: String(record.specialty ?? ""),
+    story: String(record.story ?? ""),
+    coffee_varieties: normalizeTextArray(record.coffee_varieties),
+    production_volume:
+      record.production_volume === null || record.production_volume === undefined
+        ? ""
+        : String(record.production_volume),
+    certifications: normalizeTextArray(record.certifications),
+    contact_phone:
+      record.contact_phone === null || record.contact_phone === undefined
+        ? ""
+        : String(record.contact_phone),
+    display_order:
+      typeof record.display_order === "number"
+        ? record.display_order
+        : Number(record.display_order ?? 0),
+    is_featured: Boolean(record.is_featured),
+  });
 
   useEffect(() => {
     fetchSocios();
@@ -75,7 +137,10 @@ export default function Socios() {
       setFeaturedError("No se pudo cargar la información de los socios destacados.");
     } else {
       setFeaturedError(null);
-      setFeaturedSocios((featuredData ?? []) as SocioProfile[]);
+      const normalizedFeatured = (featuredData ?? []).map((record) =>
+        normalizeSocio(record as Record<string, unknown>)
+      );
+      setFeaturedSocios(normalizedFeatured);
     }
 
     setIsLoadingFeatured(false);
@@ -86,7 +151,10 @@ export default function Socios() {
       setSocios([]);
     } else {
       setError(null);
-      setSocios((data ?? []) as SocioProfile[]);
+      const normalizedSocios = (data ?? []).map((record) =>
+        normalizeSocio(record as Record<string, unknown>)
+      );
+      setSocios(normalizedSocios);
     }
 
     setIsLoading(false);
@@ -198,7 +266,9 @@ export default function Socios() {
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-neutral-700 font-sans">Extensión:</span>
-                            <span className="font-medium">{socio.hectares} ha</span>
+                            <span className="font-medium">
+                              {socio.hectares !== null ? `${socio.hectares} ha` : "-"}
+                            </span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-neutral-700 font-sans">Cargas Familiares:</span>

@@ -40,7 +40,7 @@ interface SocioProfile {
   certifications: string[];
   contact_phone: string;
   display_order: number;
-  is_featured?: boolean;
+  is_featured: boolean;
 }
 
 export default function Socios() {
@@ -108,7 +108,10 @@ export default function Socios() {
       typeof record.display_order === "number"
         ? record.display_order
         : Number(record.display_order ?? 0),
-    is_featured: Boolean(record.is_featured),
+    is_featured:
+      typeof record.is_featured === "boolean"
+        ? record.is_featured
+        : String(record.is_featured ?? "").toLowerCase() === "true",
   });
 
   useEffect(() => {
@@ -118,43 +121,33 @@ export default function Socios() {
   const fetchSocios = async () => {
     setIsLoading(true);
     setIsLoadingFeatured(true);
+    try {
+      const { data, error } = await supabase
+        .from("socios_profiles")
+        .select("*")
+        .order("display_order", { ascending: true });
 
-    const [{ data: featuredData, error: featuredFetchError }, { data, error: sociosError }] =
-      await Promise.all([
-        supabase
-          .from("socios_profiles")
-          .select("*")
-          .eq("is_featured", true)
-          .order("display_order", { ascending: true }),
-        supabase
-          .from("socios_profiles")
-          .select("*")
-          .order("display_order", { ascending: true }),
-      ]);
+      if (error) {
+        throw error;
+      }
 
-    if (featuredFetchError) {
-      console.error("Error fetching featured socios:", featuredFetchError);
-      setFeaturedError("No se pudo cargar la información de los socios destacados.");
-    } else {
-      setFeaturedError(null);
-      const normalizedFeatured = (featuredData ?? []).map((record) =>
-        normalizeSocio(record as Record<string, unknown>)
-      );
-      setFeaturedSocios(normalizedFeatured);
-    }
-
-    setIsLoadingFeatured(false);
-
-    if (sociosError) {
-      console.error("Error fetching socios:", sociosError);
-      setError("No se pudo cargar la información de los socios.");
-      setSocios([]);
-    } else {
-      setError(null);
       const normalizedSocios = (data ?? []).map((record) =>
         normalizeSocio(record as Record<string, unknown>)
       );
+
       setSocios(normalizedSocios);
+      setFeaturedSocios(normalizedSocios.filter((socio) => socio.is_featured));
+      setError(null);
+      setFeaturedError(null);
+    } catch (fetchError) {
+      console.error("Error fetching socios:", fetchError);
+      setSocios([]);
+      setFeaturedSocios([]);
+      setError("No se pudo cargar la información de los socios.");
+      setFeaturedError("No se pudo cargar la información de los socios destacados.");
+    } finally {
+      setIsLoading(false);
+      setIsLoadingFeatured(false);
     }
 
     setIsLoading(false);

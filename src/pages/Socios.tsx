@@ -11,6 +11,10 @@ const fallbackSupabaseUrl = "https://rzriwvrqvubfqernxwmv.supabase.co";
 const fallbackSupabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6cml3dnJxdnViZnFlcm54d212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTAyMjEsImV4cCI6MjA3ODA4NjIyMX0.Hr_HFqc-47rnX4jK6Gxt3JM6QEteoq-BABz45h3D_Go";
 
+const legacySupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
+const legacySupabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
+
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
@@ -178,48 +182,76 @@ export default function Socios() {
     fetchSocios();
   }, []);
 
+  const fetchSociosFromSource = async (url: string, key: string) => {
+    const requestUrl = new URL(`${url}/rest/v1/socios_profiles`);
+    requestUrl.searchParams.set("select", "*");
+    requestUrl.searchParams.set("order", "display_order");
+
+    const response = await fetch(requestUrl.toString(), {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || response.statusText);
+    }
+
+    const rawData = (await response.json()) as unknown;
+
+    if (!Array.isArray(rawData)) {
+      throw new Error("La respuesta de Supabase no tiene el formato esperado.");
+    }
+
+    const normalizedSocios = rawData.map((record) =>
+      normalizeSocio(record as Record<string, unknown>)
+    );
+
+    const orderedSocios = [...normalizedSocios].sort(
+      (a, b) => a.display_order - b.display_order
+    );
+
+    const highlightedSocios = orderedSocios.filter((socio) => socio.is_featured);
+    const fallbackFeatured =
+      highlightedSocios.length > 0 ? highlightedSocios : orderedSocios.slice(0, 21);
+
+    return { orderedSocios, fallbackFeatured };
+  };
+
   const fetchSocios = async () => {
     setIsLoading(true);
     setIsLoadingFeatured(true);
+
     try {
-      const requestUrl = new URL(`${supabaseUrl}/rest/v1/socios_profiles`);
-      requestUrl.searchParams.set("select", "*");
-      requestUrl.searchParams.set("order", "display_order");
+      const dataSources = [
+        { url: supabaseUrl, key: supabaseAnonKey, label: "principal" },
+        { url: fallbackSupabaseUrl, key: fallbackSupabaseAnonKey, label: "respaldo" },
+        { url: legacySupabaseUrl, key: legacySupabaseAnonKey, label: "histórico" },
+      ];
 
-      const response = await fetch(requestUrl.toString(), {
-        headers: {
-          apikey: supabaseAnonKey,
-          Authorization: `Bearer ${supabaseAnonKey}`,
-          Accept: "application/json",
-        },
-        cache: "no-store",
-      });
+      for (const source of dataSources) {
+        if (!source.url || !source.key) continue;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || response.statusText);
+        try {
+          const { orderedSocios, fallbackFeatured } = await fetchSociosFromSource(
+            source.url,
+            source.key
+          );
+
+          setSocios(orderedSocios);
+          setFeaturedSociosList(fallbackFeatured);
+          setError(null);
+          setFeaturedError(null);
+          return;
+        } catch (fetchError) {
+          console.error(`Error obteniendo socios (${source.label}):`, fetchError);
+        }
       }
 
-      const rawData = (await response.json()) as unknown[];
-
-      const normalizedSocios = (rawData ?? []).map((record) =>
-        normalizeSocio(record as Record<string, unknown>)
-      );
-
-      const orderedSocios = [...normalizedSocios].sort(
-        (a, b) => a.display_order - b.display_order
-      );
-
-      const highlightedSocios = orderedSocios.filter((socio) => socio.is_featured);
-      const fallbackFeatured =
-        highlightedSocios.length > 0 ? highlightedSocios : orderedSocios.slice(0, 21);
-
-      setSocios(orderedSocios);
-      setFeaturedSociosList(fallbackFeatured);
-      setError(null);
-      setFeaturedError(null);
-    } catch (fetchError) {
-      console.error("Error fetching socios:", fetchError);
       setSocios([]);
       setFeaturedSociosList([]);
       setError("No se pudo cargar la información de los socios.");

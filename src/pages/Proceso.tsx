@@ -123,7 +123,7 @@ export default function Proceso() {
             <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-neutral-200">
               <iframe
                 className="absolute inset-0 w-full h-full"
-                src="https://www.youtube.com/embed/xyLF8lIAy0w"
+                src="https://youtu.be/xyLF8lIAy0w?si=CGX301QhSK9TZZjJ"
                 title="Proceso del café"
                 allowFullScreen
                 loading="lazy"

@@ -1,5 +1,6 @@
 import { MapPin, Coffee, Users, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef, type RefObject } from "react";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import Navigation from "../components/Navigation";
 import Footer from "../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -182,32 +183,24 @@ export default function Socios() {
     fetchSocios();
   }, []);
 
-  const fetchSociosFromSource = async (url: string, key: string) => {
-    const requestUrl = new URL(`${url}/rest/v1/socios_profiles`);
-    requestUrl.searchParams.set("select", "*");
-    requestUrl.searchParams.set("order", "display_order");
-
-    const response = await fetch(requestUrl.toString(), {
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-        Accept: "application/json",
-      },
-      cache: "no-store",
+  const createSupabaseClient = (url?: string, key?: string): SupabaseClient | null => {
+    if (!url || !key) return null;
+    return createClient(url, key, {
+      auth: { persistSession: false },
     });
+  };
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || response.statusText);
+  const fetchSociosFromClient = async (client: SupabaseClient) => {
+    const { data, error: supabaseError } = await client
+      .from("socios_profiles")
+      .select("*")
+      .order("display_order", { ascending: true });
+
+    if (supabaseError) {
+      throw supabaseError;
     }
 
-    const rawData = (await response.json()) as unknown;
-
-    if (!Array.isArray(rawData)) {
-      throw new Error("La respuesta de Supabase no tiene el formato esperado.");
-    }
-
-    const normalizedSocios = rawData.map((record) =>
+    const normalizedSocios = (data ?? []).map((record) =>
       normalizeSocio(record as Record<string, unknown>)
     );
 
@@ -227,20 +220,18 @@ export default function Socios() {
     setIsLoadingFeatured(true);
 
     try {
-      const dataSources = [
+      const dataSources: { url?: string; key?: string; label: string }[] = [
         { url: supabaseUrl, key: supabaseAnonKey, label: "principal" },
         { url: fallbackSupabaseUrl, key: fallbackSupabaseAnonKey, label: "respaldo" },
         { url: legacySupabaseUrl, key: legacySupabaseAnonKey, label: "histórico" },
       ];
 
       for (const source of dataSources) {
-        if (!source.url || !source.key) continue;
+        const client = createSupabaseClient(source.url, source.key);
+        if (!client) continue;
 
         try {
-          const { orderedSocios, fallbackFeatured } = await fetchSociosFromSource(
-            source.url,
-            source.key
-          );
+          const { orderedSocios, fallbackFeatured } = await fetchSociosFromClient(client);
 
           setSocios(orderedSocios);
           setFeaturedSociosList(fallbackFeatured);

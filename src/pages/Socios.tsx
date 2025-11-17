@@ -7,9 +7,9 @@ import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import SocioDetailModal from "../components/SocioDetailModal";
 
-const fallbackSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
+const fallbackSupabaseUrl = "https://rzriwvrqvubfqernxwmv.supabase.co";
 const fallbackSupabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6cml3dnJxdnViZnFlcm54d212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTAyMjEsImV4cCI6MjA3ODA4NjIyMX0.Hr_HFqc-47rnX4jK6Gxt3JM6QEteoq-BABz45h3D_Go";
 
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;

@@ -24,26 +24,34 @@ const resolveEnvVar = (keys: string[]) => {
 
   for (const key of keys) {
     const value = env[key];
-    if (value && value.trim().length > 0) {
-      return value;
+    if (typeof value === "string" && value.trim().length > 0) {
+      return { key, value: value.trim() };
     }
   }
 
-  return undefined;
+  return { key: undefined, value: undefined };
 };
 
-const supabaseUrl =
-  resolveEnvVar(["VITE_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"]) || fallbackSupabaseUrl;
-const supabaseAnonKey =
-  resolveEnvVar(["VITE_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]) ||
-  fallbackSupabaseAnonKey;
+const { value: envSupabaseUrl, key: envSupabaseUrlKey } = resolveEnvVar([
+  "VITE_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_URL",
+]);
 
-if (
-  !resolveEnvVar(["VITE_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"]) ||
-  !resolveEnvVar(["VITE_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"])
-) {
+const { value: envSupabaseAnonKey, key: envSupabaseAnonKeyKey } = resolveEnvVar([
+  "VITE_SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+]);
+
+const supabaseUrl = envSupabaseUrl || fallbackSupabaseUrl;
+const supabaseAnonKey = envSupabaseAnonKey || fallbackSupabaseAnonKey;
+
+if (!envSupabaseUrl || !envSupabaseAnonKey) {
   console.warn(
-    "Usando las credenciales predeterminadas de Supabase proporcionadas para el entorno de desarrollo. Configura las variables VITE_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL y VITE_SUPABASE_ANON_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY para sobreescribirlas."
+    "Usando credenciales de Supabase incluidas como respaldo porque faltan variables VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en Vercel (las variables NEXT_PUBLIC_ no se exponen en apps Vite)."
+  );
+} else {
+  console.info(
+    `Usando Supabase desde ${envSupabaseUrlKey} y ${envSupabaseAnonKeyKey}; recuerda que en Vercel deben definirse con prefijo VITE_ para exponerlas al cliente.`
   );
 }
 
@@ -216,6 +224,8 @@ export default function Socios() {
   };
 
   const fetchSocios = async () => {
+    let lastError: unknown = null;
+
     setIsLoading(true);
     setIsLoadingFeatured(true);
 
@@ -231,6 +241,7 @@ export default function Socios() {
         if (!client) continue;
 
         try {
+          console.info(`Intentando cargar socios desde Supabase (${source.label})…`);
           const { orderedSocios, fallbackFeatured } = await fetchSociosFromClient(client);
 
           setSocios(orderedSocios);
@@ -239,14 +250,18 @@ export default function Socios() {
           setFeaturedError(null);
           return;
         } catch (fetchError) {
+          lastError = fetchError;
           console.error(`Error obteniendo socios (${source.label}):`, fetchError);
         }
       }
 
       setSocios([]);
       setFeaturedSociosList([]);
-      setError("No se pudo cargar la información de los socios.");
-      setFeaturedError("No se pudo cargar la información de los socios destacados.");
+      console.error("No se pudo cargar la información de los socios desde ninguna fuente.", lastError);
+      setError("No se pudo cargar la información de los socios. Revisa la consola para más detalles.");
+      setFeaturedError(
+        "No se pudo cargar la información de los socios destacados. Revisa la consola para más detalles."
+      );
     } finally {
       setIsLoading(false);
       setIsLoadingFeatured(false);

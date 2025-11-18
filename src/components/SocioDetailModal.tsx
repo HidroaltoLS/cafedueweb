@@ -15,6 +15,8 @@ interface SocioProfile {
   production_volume: string;
   certifications: string[];
   contact_phone: string;
+  display_order: number;
+  is_featured?: boolean | null;
 }
 
 interface SocioDetailModalProps {

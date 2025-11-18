@@ -11,8 +11,13 @@ import SocioDetailModal from "../components/SocioDetailModal";
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabaseUrl = envSupabaseUrl || "https://rzriwvrqvubfqernxwmv.supabase.co";
+const supabaseAnonKey =
+  envSupabaseAnonKey ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6cml3dnJxdnViZnFlcm54d212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTAyMjEsImV4cCI6MjA3ODA4NjIyMX0.Hr_HFqc-47rnX4jK6Gxt3JM6QEteoq-BABz45h3D_Go";
 
 const supabase =
   supabaseUrl && supabaseAnonKey
@@ -21,9 +26,9 @@ const supabase =
       })
     : null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!envSupabaseUrl || !envSupabaseAnonKey) {
   console.error(
-    "Faltan las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY necesarias para conectar a Supabase."
+    "Faltan las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY; se usarán las credenciales predeterminadas para conectar a Supabase."
   );
 }
 

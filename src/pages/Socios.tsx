@@ -11,29 +11,16 @@ import SocioDetailModal from "../components/SocioDetailModal";
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
-const envVars = import.meta.env as Record<string, string | undefined>;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const defaultSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
-const defaultSupabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("Variables VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY faltan.");
+}
 
-const envSupabaseUrl =
-  envVars.VITE_SUPABASE_URL?.trim() || envVars.NEXT_PUBLIC_SUPABASE_URL?.trim();
-const envSupabaseAnonKey =
-  envVars.VITE_SUPABASE_ANON_KEY?.trim() || envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-
-const resolvedSupabaseUrl = envSupabaseUrl || defaultSupabaseUrl;
-const resolvedSupabaseAnonKey = envSupabaseAnonKey || defaultSupabaseAnonKey;
-
-const supabase = createClient(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: false },
 });
-
-if (!envSupabaseUrl || !envSupabaseAnonKey) {
-  console.warn(
-    "Faltan VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY o NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_ANON_KEY; usando las credenciales predeterminadas para cargar socios. Configura las variables para apuntar a tu propio proyecto en producción."
-  );
-}
 
 interface SocioProfile {
   id: string;
@@ -176,7 +163,7 @@ export default function Socios() {
     setIsLoadingFeatured(true);
 
     try {
-      if (!supabase) {
+      if (!supabaseUrl || !supabaseAnonKey) {
         const message =
           "No se pudo cargar la información de los socios porque faltan las credenciales de Supabase.";
         console.error(message);
@@ -193,7 +180,7 @@ export default function Socios() {
         .order("display_order", { ascending: true });
 
       if (supabaseError) {
-        console.error("Error Supabase socios_profiles:", supabaseError);
+        console.error("Error Supabase:", supabaseError);
         const supabaseMessage = supabaseError.message || "Error desconocido de Supabase";
         setError(`No se pudo cargar la información de los socios: ${supabaseMessage}`);
         setFeaturedError(`No se pudo cargar la información de los socios destacados: ${supabaseMessage}`);

@@ -11,24 +11,22 @@ import SocioDetailModal from "../components/SocioDetailModal";
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
-const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabaseUrl = envSupabaseUrl || "https://kmfavmqealpmrpdwlrqi.supabase.co";
-const supabaseAnonKey =
-  envSupabaseAnonKey ||
+const defaultSupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
+const defaultSupabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
 
-const supabase =
-  supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: false },
-      })
-    : null;
+const resolvedSupabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL?.trim() || defaultSupabaseUrl;
+const resolvedSupabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() || defaultSupabaseAnonKey;
 
-if (!envSupabaseUrl || !envSupabaseAnonKey) {
-  console.error(
-    "Faltan las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY; se usarán las credenciales predeterminadas para conectar a Supabase."
+const supabase = createClient(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
+  auth: { persistSession: false },
+});
+
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  console.warn(
+    "Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY; usando las credenciales predeterminadas para cargar socios. Configura las variables para apuntar a tu propio proyecto en producción."
   );
 }
 
@@ -191,10 +189,9 @@ export default function Socios() {
 
       if (supabaseError) {
         console.error("Error Supabase socios_profiles:", supabaseError);
-        setError("No se pudo cargar la información de los socios. Revisa la consola para más detalles.");
-        setFeaturedError(
-          "No se pudo cargar la información de los socios destacados. Revisa la consola para más detalles."
-        );
+        const supabaseMessage = supabaseError.message || "Error desconocido de Supabase";
+        setError(`No se pudo cargar la información de los socios: ${supabaseMessage}`);
+        setFeaturedError(`No se pudo cargar la información de los socios destacados: ${supabaseMessage}`);
         setSocios([]);
         setFeaturedSociosList([]);
         return;

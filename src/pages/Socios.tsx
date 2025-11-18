@@ -177,34 +177,22 @@ export default function Socios() {
     setIsLoading(true);
     setIsLoadingFeatured(true);
 
-    const client = supabase;
-
-    if (!client) {
-      const message =
-        "No se pudo cargar la información de los socios porque faltan las credenciales de Supabase.";
-      console.error(message);
-      setError(message);
-      setFeaturedError(message);
-      setSocios([]);
-      setFeaturedSociosList([]);
-      setIsLoading(false);
-      setIsLoadingFeatured(false);
-      return;
-    }
-
     try {
-      const { data, error: supabaseError } = await client
+      if (!supabase) {
+        setError("No se pudo cargar la información de los socios.");
+        setFeaturedError("No se pudo cargar la información de los socios destacados.");
+        return;
+      }
+
+      const { data, error } = await supabase
         .from("socios_profiles")
         .select("*")
         .order("display_order", { ascending: true });
 
-      if (supabaseError) {
-        console.error("Error Supabase:", supabaseError);
-        const supabaseMessage = supabaseError.message || "Error desconocido de Supabase";
-        setError(`No se pudo cargar la información de los socios: ${supabaseMessage}`);
-        setFeaturedError(`No se pudo cargar la información de los socios destacados: ${supabaseMessage}`);
-        setSocios([]);
-        setFeaturedSociosList([]);
+      if (error) {
+        console.error("Error Supabase socios_profiles:", error);
+        setError("No se pudo cargar la información de los socios.");
+        setFeaturedError("No se pudo cargar la información de los socios destacados.");
         return;
       }
 
@@ -213,12 +201,12 @@ export default function Socios() {
       );
 
       const orderedSocios = [...normalizedSocios].sort(
-        (a, b) => a.display_order - b.display_order
+        (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
       );
 
-      const highlightedSocios = orderedSocios.filter((socio) => socio.is_featured);
+      const highlighted = orderedSocios.filter((s) => s.is_featured);
       const fallbackFeatured =
-        highlightedSocios.length > 0 ? highlightedSocios : orderedSocios.slice(0, 21);
+        highlighted.length > 0 ? highlighted : orderedSocios.slice(0, 21);
 
       setSocios(orderedSocios);
       setFeaturedSociosList(fallbackFeatured);

@@ -11,14 +11,9 @@ import SocioDetailModal from "../components/SocioDetailModal";
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
-const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL ||
-  import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://mdlnyfhxjlqekodnglsq.supabase.co";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbG55Zmh4amxxZWtvZG5nbHNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0OTUwNTMsImV4cCI6MjA3OTA3MTA1M30.0snSMhVo_xfR3sy96nfuk96Fj-tFk1Sm7YI8ifI9VI4";
+  import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 let supabase: SupabaseClient | null = null;
 

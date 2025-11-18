@@ -14,10 +14,10 @@ const AUTO_SCROLL_INTERVAL_MS = 5000;
 const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const supabaseUrl = envSupabaseUrl || "https://rzriwvrqvubfqernxwmv.supabase.co";
+const supabaseUrl = envSupabaseUrl || "https://kmfavmqealpmrpdwlrqi.supabase.co";
 const supabaseAnonKey =
   envSupabaseAnonKey ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6cml3dnJxdnViZnFlcm54d212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTAyMjEsImV4cCI6MjA3ODA4NjIyMX0.Hr_HFqc-47rnX4jK6Gxt3JM6QEteoq-BABz45h3D_Go";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
 
 const supabase =
   supabaseUrl && supabaseAnonKey

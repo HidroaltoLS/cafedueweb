@@ -1,6 +1,6 @@
 import { MapPin, Coffee, Users, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef, type RefObject } from "react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import Navigation from "../components/Navigation";
 import Footer from "../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -8,50 +8,22 @@ import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import SocioDetailModal from "../components/SocioDetailModal";
 
-const fallbackSupabaseUrl = "https://rzriwvrqvubfqernxwmv.supabase.co";
-const fallbackSupabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6cml3dnJxdnViZnFlcm54d212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MTAyMjEsImV4cCI6MjA3ODA4NjIyMX0.Hr_HFqc-47rnX4jK6Gxt3JM6QEteoq-BABz45h3D_Go";
-
-const legacySupabaseUrl = "https://kmfavmqealpmrpdwlrqi.supabase.co";
-const legacySupabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
-
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
-const resolveEnvVar = (keys: string[]) => {
-  const env = import.meta.env as Record<string, string | undefined>;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  for (const key of keys) {
-    const value = env[key];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return { key, value: value.trim() };
-    }
-  }
+const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
+      })
+    : null;
 
-  return { key: undefined, value: undefined };
-};
-
-const { value: envSupabaseUrl, key: envSupabaseUrlKey } = resolveEnvVar([
-  "VITE_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_URL",
-]);
-
-const { value: envSupabaseAnonKey, key: envSupabaseAnonKeyKey } = resolveEnvVar([
-  "VITE_SUPABASE_ANON_KEY",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-]);
-
-const supabaseUrl = envSupabaseUrl || fallbackSupabaseUrl;
-const supabaseAnonKey = envSupabaseAnonKey || fallbackSupabaseAnonKey;
-
-if (!envSupabaseUrl || !envSupabaseAnonKey) {
-  console.warn(
-    "Usando credenciales de Supabase incluidas como respaldo porque faltan variables VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en Vercel (las variables NEXT_PUBLIC_ no se exponen en apps Vite)."
-  );
-} else {
-  console.info(
-    `Usando Supabase desde ${envSupabaseUrlKey} y ${envSupabaseAnonKeyKey}; recuerda que en Vercel deben definirse con prefijo VITE_ para exponerlas al cliente.`
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    "Faltan las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY necesarias para conectar a Supabase."
   );
 }
 
@@ -191,77 +163,54 @@ export default function Socios() {
     fetchSocios();
   }, []);
 
-  const createSupabaseClient = (url?: string, key?: string): SupabaseClient | null => {
-    if (!url || !key) return null;
-    return createClient(url, key, {
-      auth: { persistSession: false },
-    });
-  };
-
-  const fetchSociosFromClient = async (client: SupabaseClient) => {
-    const { data, error: supabaseError } = await client
-      .from("socios_profiles")
-      .select("*")
-      .order("display_order", { ascending: true });
-
-    if (supabaseError) {
-      throw supabaseError;
-    }
-
-    const normalizedSocios = (data ?? []).map((record) =>
-      normalizeSocio(record as Record<string, unknown>)
-    );
-
-    const orderedSocios = [...normalizedSocios].sort(
-      (a, b) => a.display_order - b.display_order
-    );
-
-    const highlightedSocios = orderedSocios.filter((socio) => socio.is_featured);
-    const fallbackFeatured =
-      highlightedSocios.length > 0 ? highlightedSocios : orderedSocios.slice(0, 21);
-
-    return { orderedSocios, fallbackFeatured };
-  };
-
   const fetchSocios = async () => {
-    let lastError: unknown = null;
-
     setIsLoading(true);
     setIsLoadingFeatured(true);
 
     try {
-      const dataSources: { url?: string; key?: string; label: string }[] = [
-        { url: supabaseUrl, key: supabaseAnonKey, label: "principal" },
-        { url: fallbackSupabaseUrl, key: fallbackSupabaseAnonKey, label: "respaldo" },
-        { url: legacySupabaseUrl, key: legacySupabaseAnonKey, label: "histórico" },
-      ];
-
-      for (const source of dataSources) {
-        const client = createSupabaseClient(source.url, source.key);
-        if (!client) continue;
-
-        try {
-          console.info(`Intentando cargar socios desde Supabase (${source.label})…`);
-          const { orderedSocios, fallbackFeatured } = await fetchSociosFromClient(client);
-
-          setSocios(orderedSocios);
-          setFeaturedSociosList(fallbackFeatured);
-          setError(null);
-          setFeaturedError(null);
-          return;
-        } catch (fetchError) {
-          lastError = fetchError;
-          console.error(`Error obteniendo socios (${source.label}):`, fetchError);
-        }
+      if (!supabase) {
+        const message =
+          "No se pudo cargar la información de los socios porque faltan las credenciales de Supabase.";
+        console.error(message);
+        setError(message);
+        setFeaturedError(message);
+        setSocios([]);
+        setFeaturedSociosList([]);
+        return;
       }
 
-      setSocios([]);
-      setFeaturedSociosList([]);
-      console.error("No se pudo cargar la información de los socios desde ninguna fuente.", lastError);
-      setError("No se pudo cargar la información de los socios. Revisa la consola para más detalles.");
-      setFeaturedError(
-        "No se pudo cargar la información de los socios destacados. Revisa la consola para más detalles."
+      const { data, error: supabaseError } = await supabase
+        .from("socios_profiles")
+        .select("*")
+        .order("display_order", { ascending: true });
+
+      if (supabaseError) {
+        console.error("Error Supabase socios_profiles:", supabaseError);
+        setError("No se pudo cargar la información de los socios. Revisa la consola para más detalles.");
+        setFeaturedError(
+          "No se pudo cargar la información de los socios destacados. Revisa la consola para más detalles."
+        );
+        setSocios([]);
+        setFeaturedSociosList([]);
+        return;
+      }
+
+      const normalizedSocios = (data ?? []).map((record) =>
+        normalizeSocio(record as Record<string, unknown>)
       );
+
+      const orderedSocios = [...normalizedSocios].sort(
+        (a, b) => a.display_order - b.display_order
+      );
+
+      const highlightedSocios = orderedSocios.filter((socio) => socio.is_featured);
+      const fallbackFeatured =
+        highlightedSocios.length > 0 ? highlightedSocios : orderedSocios.slice(0, 21);
+
+      setSocios(orderedSocios);
+      setFeaturedSociosList(fallbackFeatured);
+      setError(null);
+      setFeaturedError(null);
     } finally {
       setIsLoading(false);
       setIsLoadingFeatured(false);

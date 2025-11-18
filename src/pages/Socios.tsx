@@ -1,6 +1,6 @@
 import { MapPin, Coffee, Users, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef, type RefObject } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import Navigation from "../components/Navigation";
 import Footer from "../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -11,16 +11,24 @@ import SocioDetailModal from "../components/SocioDetailModal";
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL ||
+  import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://mdlnyfhxjlqekodnglsq.supabase.co";
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbG55Zmh4amxxZWtvZG5nbHNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0OTUwNTMsImV4cCI6MjA3OTA3MTA1M30.0snSMhVo_xfR3sy96nfuk96Fj-tFk1Sm7YI8ifI9VI4";
+
+let supabase: SupabaseClient | null = null;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("Variables VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY faltan.");
+} else {
+  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false },
+  });
 }
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: false },
-});
 
 interface SocioProfile {
   id: string;
@@ -162,19 +170,23 @@ export default function Socios() {
     setIsLoading(true);
     setIsLoadingFeatured(true);
 
-    try {
-      if (!supabaseUrl || !supabaseAnonKey) {
-        const message =
-          "No se pudo cargar la información de los socios porque faltan las credenciales de Supabase.";
-        console.error(message);
-        setError(message);
-        setFeaturedError(message);
-        setSocios([]);
-        setFeaturedSociosList([]);
-        return;
-      }
+    const client = supabase;
 
-      const { data, error: supabaseError } = await supabase
+    if (!client) {
+      const message =
+        "No se pudo cargar la información de los socios porque faltan las credenciales de Supabase.";
+      console.error(message);
+      setError(message);
+      setFeaturedError(message);
+      setSocios([]);
+      setFeaturedSociosList([]);
+      setIsLoading(false);
+      setIsLoadingFeatured(false);
+      return;
+    }
+
+    try {
+      const { data, error: supabaseError } = await client
         .from("socios_profiles")
         .select("*")
         .order("display_order", { ascending: true });

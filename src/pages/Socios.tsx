@@ -11,6 +11,8 @@ import SocioDetailModal from "../components/SocioDetailModal";
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -26,6 +28,9 @@ const supabase =
       })
     : null;
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    "No se encontraron las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY; configura estas credenciales para cargar la información de socios."
 if (!envSupabaseUrl || !envSupabaseAnonKey) {
   console.error(
     "Faltan las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY; se usarán las credenciales predeterminadas para conectar a Supabase."
@@ -191,6 +196,9 @@ export default function Socios() {
 
       if (supabaseError) {
         console.error("Error Supabase socios_profiles:", supabaseError);
+        const supabaseMessage = supabaseError.message || "Error desconocido de Supabase";
+        setError(`No se pudo cargar la información de los socios: ${supabaseMessage}`);
+        setFeaturedError(`No se pudo cargar la información de los socios destacados: ${supabaseMessage}`);
         setError("No se pudo cargar la información de los socios. Revisa la consola para más detalles.");
         setFeaturedError(
           "No se pudo cargar la información de los socios destacados. Revisa la consola para más detalles."

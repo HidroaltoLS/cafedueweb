@@ -13,6 +13,13 @@ const AUTO_SCROLL_INTERVAL_MS = 5000;
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabaseUrl = envSupabaseUrl || "https://kmfavmqealpmrpdwlrqi.supabase.co";
+const supabaseAnonKey =
+  envSupabaseAnonKey ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmF2bXFlYWxwbXJwZHdscnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MDI0MjEsImV4cCI6MjA3NTA3ODQyMX0.Vu9ANfcm0ZvaH29soN-XQfOghFOChZV49-vs3oahfjU";
 
 const supabase =
   supabaseUrl && supabaseAnonKey
@@ -24,6 +31,9 @@ const supabase =
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
     "No se encontraron las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY; configura estas credenciales para cargar la información de socios."
+if (!envSupabaseUrl || !envSupabaseAnonKey) {
+  console.error(
+    "Faltan las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY; se usarán las credenciales predeterminadas para conectar a Supabase."
   );
 }
 
@@ -189,6 +199,10 @@ export default function Socios() {
         const supabaseMessage = supabaseError.message || "Error desconocido de Supabase";
         setError(`No se pudo cargar la información de los socios: ${supabaseMessage}`);
         setFeaturedError(`No se pudo cargar la información de los socios destacados: ${supabaseMessage}`);
+        setError("No se pudo cargar la información de los socios. Revisa la consola para más detalles.");
+        setFeaturedError(
+          "No se pudo cargar la información de los socios destacados. Revisa la consola para más detalles."
+        );
         setSocios([]);
         setFeaturedSociosList([]);
         return;
@@ -214,6 +228,8 @@ export default function Socios() {
       setIsLoading(false);
       setIsLoadingFeatured(false);
     }
+
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -277,6 +293,8 @@ export default function Socios() {
   const handleWhatsAppClick = () => {
     window.open("https://wa.me/593981369582", "_blank");
   };
+
+  const featuredSocios = socios.filter((socio) => Boolean(socio.is_featured));
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-24">

@@ -11,9 +11,9 @@ import SocioDetailModal from "../components/SocioDetailModal";
 const SCROLL_STEP = 320;
 const AUTO_SCROLL_INTERVAL_MS = 5000;
 
-const defaultSupabaseUrl = "https://mdlnyfhxjlqekodnglsq.supabase.co";
+const defaultSupabaseUrl = "https://vibobnfphvlvzltftrse.supabase.co";
 const defaultSupabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbG55Zmh4amxxZWtvZG5nbHNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0OTUwNTMsImV4cCI6MjA3OTA3MTA1M30.0snSMhVo_xfR3sy96nfuk96Fj-tFk1Sm7YI8ifI9VI4";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpYm9ibmZwaHZsdnpsdGZ0cnNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NjE2NDYsImV4cCI6MjA3OTEzNzY0Nn0.o3n8oyHa5PGJxp1Fx4CP5PGyl7a_Y0w3rmZJq1XZ6wM";
 
 const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
